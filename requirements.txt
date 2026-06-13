@@ -1,0 +1,7 @@
+pandas
+PyPDF2 
+re
+nltk
+scikit-learn
+streamlit
+joblib
