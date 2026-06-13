@@ -1,6 +1,7 @@
 import streamlit as st
-import matplotlib.pyplot as plt
-from sklearn .feature_extraction.text import TfidfVectorizer
+import matplotlib as plt
+import seaborn as sns
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import PyPDF2
 import re
@@ -10,116 +11,111 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk import pos_tag
 
-
-# Download NLTK resources
-
-nltk.download("punkt_tab")
+nltk.download("punk_tab")
 nltk.download("stopwords")
 nltk.download("averaged_perceptron_tagger_eng")
 
 
-                    # Page Setup
+'''
+                                                 //  Web Page Setup Using  Streamlit   // 
+'''
 
-st.set_page_config(page_title="Resume Job Match Scorer",page_icon="📄",layout="wide")
+
+st.set_page_config(page_title="Resume Match Scorer",page_icon="📄",layout="wide")
 
 st.markdown("""
 Upload your resume (PDF) and paste a job description to see how well they match!  
 This tool uses **TF-IDF + Cosine Similarity** to analyze your resume against job requirements.
-""")
-
+            """)
 with st.sidebar:
-    st.header("About")
+    st.header("about")
     st.info("""
-    This tool helps you:
+    This tool helps you to:
     - Measures how your resume matches a job description
     - Identify important job keywords
     - Improve your reseume based on missing terms
-    """)
-    st.header("How It works")
+""")
+    
+    st.header("How Its Works")
     st.write("""
     1. Upload your resume (PDF)
     2. Paste the job description
     3. Click **Analyze Match**
     4. Review score & suggetion
     """)
-
-
-
-                # helper function
-
+'''
+                                                             //   Functions for Each Opreations  //
+''' 
 
 def extract_text_from_pdf(uploaded_file):
+    '''This function extract uploaded pdf file texts'''
     try:
-        pdf_reder=PyPDF2.PdfReader(uploaded_file)
-        text=""
-        for page in pdf_reder.pages:
-            text=text+page.extract_text()
-        return text
+        pdf_reader  =PyPDF2.PdfReader(uploaded_file)
+        text =""
+        for page in pdf_reader.pages:
+            text = text+page.extract_text()
     except Exception as e:
-        st.error(f"Error reading PDF:{e}")
+        st.error(f"Error reading the pdf{e}")
         return ""
-    
-    
-def clean_text(text):
-    text=text.lower()
-    text=re.sub(r'[^a-zA-Z\s]','',text)
-    text=re.sub(r'\s+',' ',text).strip()
+
+
+def text_cleaning(text):
+
+    ''' its clean and format the text for better word embadding'''
+    text = text.lower()
+    text = re.sub(r'[^a-zA-Z\s]','',text)
+    text = re.sub(r'\s+',' ',text).strip()
     return text
 
 
-def  remove_stopwords(text):
+def remove_stopwords(text):
+    '''  '''
     stop_words=set(stopwords.words('english'))
     words=word_tokenize(text)
     return " ".join([word for word in words if word not in stop_words])
 
 
-def calculate_similarity(resume_text,job_description):
-    resume_processed=remove_stopwords(clean_text(resume_text))
-    job_processed=remove_stopwords(clean_text(job_description))
+def claculate_cosingSimilarity(resume_text,job_description):
+    ''' '''
+
+    resume_processed=remove_stopwords(text_cleaning(resume_text))
+    job_processed=remove_stopwords(text_cleaning(job_description))
     vectorizer=TfidfVectorizer()
     tfidf_matrix=vectorizer.fit_transform([resume_processed,job_processed])
     score=cosine_similarity(tfidf_matrix[0:1],tfidf_matrix[1:2])[0][0]*100
     return round(score,2),resume_processed,job_processed
-
-# def extract_keywords(text,num_keywords=10):
-#     words=word_tokenize(text)
-#     words=[w for w in words if len(w)>2]
-#     tagged_words=pos_tag(words)
-#     nouns=[w for w,pos in tagged_words if pos.startswith('NN') or pos.startswith('JJ')]
-#     word_freq=Counter(nouns)
-#     return word_freq.most_common(num_keywords)
-
-
-                    # Main aap
+    
+'''
+        
+    //  Main App   //
+        
+'''
 
 def main():
-    uploaded_file=st.file_uploader("Upload your resuem (PDF)",type=['pdf'])
-    job_description=st.text_area("Paste the job description",height=200)
+    '''  '''
+    upload_file = st.file_uploader("Upload your resume file(pdf)",type=['pdf'])
+    job_description = st.text_area("Job description ",height=300)
 
-    if st.button("Analyze Match"):
-        if not uploaded_file:
-            st.warning("Please upload your resume")
+    if st.button('Analyze Resume'):
+        if not  upload_file:
+            st.warning('Please upload the file')
             return
         if not job_description:
-            st.warning("Please paste the job description")
+            st.warning('Please write or paste the job descripction')
             return
-        
-        
         with st.spinner("Analyzing your resume...."):
-            resume_text=extract_text_from_pdf(uploaded_file)
+            resume_text = extract_text_from_pdf(uploaded_file):
             if not resume_text:
                 st.error("could not extract text from pdf. please try another pdf")
-                return 
-            
-            # calculate similarity
-            similarity_score,resume_processed,job_processed=calculate_similarity(resume_text,job_description)
+                return
+            # calculating co-sing similarity
+            similarity_score,resume_processed,job_processed=claculate_cosingSimilarity(resume_text,job_description)
 
-            # Result
+            # result
             st.subheader("Results")
             st.metric("Match Score",f"{similarity_score:.2f}%")
 
-            # gauge chart
-
+            # charts
             fig,ax=plt.subplots(figsize=(6,0.5))
             colors=['#ff4b4b','#ffa726','#0f9d58']
             color_index=min(int(similarity_score//33),2)
