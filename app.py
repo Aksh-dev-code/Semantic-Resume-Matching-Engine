@@ -1,5 +1,5 @@
 import streamlit as st
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -11,14 +11,14 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk import pos_tag
 
-nltk.download("punk_tab")
+nltk.download("punkt")
 nltk.download("stopwords")
-nltk.download("averaged_perceptron_tagger_eng")
+nltk.download("averaged_perceptron_tagger")
 
 
-'''
-                                                 //  Web Page Setup Using  Streamlit   // 
-'''
+
+#   Web Page Setup Using  Streamlit  
+
 
 
 st.set_page_config(page_title="Resume Match Scorer",page_icon="📄",layout="wide")
@@ -43,19 +43,26 @@ with st.sidebar:
     3. Click **Analyze Match**
     4. Review score & suggetion
     """)
-'''
-                                                             //   Functions for Each Opreations  //
-''' 
+
+#   Functions for Each Opreations  
+
 
 def extract_text_from_pdf(uploaded_file):
-    '''This function extract uploaded pdf file texts'''
+    '''This function read and extract text in pdf file '''
     try:
-        pdf_reader  =PyPDF2.PdfReader(uploaded_file)
-        text =""
+        pdf_reader = PyPDF2.PdfReader(uploaded_file)
+        text = ""
+
         for page in pdf_reader.pages:
-            text = text+page.extract_text()
+            page_text = page.extract_text()
+
+            if page_text:
+                text += page_text
+
+        return text
+
     except Exception as e:
-        st.error(f"Error reading the pdf{e}")
+        st.error(f"Error reading PDF: {e}")
         return ""
 
 
@@ -85,11 +92,7 @@ def claculate_cosingSimilarity(resume_text,job_description):
     score=cosine_similarity(tfidf_matrix[0:1],tfidf_matrix[1:2])[0][0]*100
     return round(score,2),resume_processed,job_processed
     
-'''
-        
-    //  Main App   //
-        
-'''
+# Main
 
 def main():
     '''  '''
@@ -103,10 +106,11 @@ def main():
         if not job_description:
             st.warning('Please write or paste the job descripction')
             return
+        
         with st.spinner("Analyzing your resume...."):
-            resume_text = extract_text_from_pdf(uploaded_file):
+            resume_text = extract_text_from_pdf(upload_file)
             if not resume_text:
-                st.error("could not extract text from pdf. please try another pdf")
+                st.error("Could not extract text from PDF. Please try another PDF.")
                 return
             # calculating co-sing similarity
             similarity_score,resume_processed,job_processed=claculate_cosingSimilarity(resume_text,job_description)
